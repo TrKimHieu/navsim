@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "navsim"
+version = "0.1.0"
+description = "Indoor robot-navigation environments for reinforcement learning: Gymnasium (one robot) and PettingZoo (several robots) on real floor plans with real robots"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Tran Kim Hieu" }]
+keywords = ["reinforcement-learning", "gymnasium", "pettingzoo", "robot-navigation", "multi-agent", "lidar", "simulation"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "gymnasium>=1.0",
+  "numpy>=1.25",
+  "scipy>=1.10",
+  "opencv-python-headless>=4.5",
+  "pillow>=9",
+]
+
+[project.optional-dependencies]
+hub = ["huggingface_hub>=0.23"]
+marl = ["pettingzoo>=1.24"]
+fast = ["numba>=0.59"]
+plot = ["matplotlib>=3.5"]
+all = ["huggingface_hub>=0.23", "pettingzoo>=1.24", "numba>=0.59", "matplotlib>=3.5"]
+test = ["pytest>=7", "pettingzoo>=1.24"]
+
+[project.scripts]
+navsim = "navsim.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+navsim = ["data/demo/**/*", "robots/presets/*.json"]

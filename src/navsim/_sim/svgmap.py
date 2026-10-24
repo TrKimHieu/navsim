@@ -1,0 +1,115 @@
+"""Reading SVG floor plans.
+
+A map file stores real coordinates in metres, with y pointing up (ROS REP-103). The path
+with id ``free`` (even-odd fill rule) is the area where a robot may be: the only layer the
+environments use. Other paths are for display. Metadata is JSON inside
+``<metadata id="hm3denv">``.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import xml.etree.ElementTree as ET
+
+import cv2
+import numpy as np
+
+READABLE_SCHEMAS = ("1.0", "2.0")
+SVG_NS = "http://www.w3.org/2000/svg"
+# a path command, or a number in any SVG form (".5", "2.", "+1e-1"; "4-5" is two numbers)
+_TOKEN = re.compile(r"[A-DF-Za-df-z]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?")
+
+
+def path_to_rings(d: str) -> list[np.ndarray]:
+    """The closed polygons ("rings") of an SVG path made of absolute M / L / Z commands.
+    Any other command (relative m / l, H, V, curves, ...) raises ValueError instead of
+    being read wrongly."""
+    rings, ring, numbers = [], [], []
+    for token in _TOKEN.findall(d.replace(",", " ")):
+        if token.isalpha():
+            if token not in "MLZ":
+                raise ValueError(f"SVG path command {token!r}: maps take only absolute M, L and Z "
+                                 "(Inkscape: Preferences > Input/Output > SVG output > Path data > "
+                                 "Absolute; flatten curves first)")
+            if numbers:
+                break                                  # reported below
+            if token in "MZ" and ring:
+                rings.append(np.array(ring, float))
+                ring = []
+            continue
+        numbers.append(float(token))
+        if len(numbers) == 2:
+            ring.append(numbers)
+            numbers = []
+    if numbers:
+        raise ValueError(f"SVG path has an odd number of coordinates near {numbers[0]:g}")
+    if ring:
+        rings.append(np.array(ring, float))
+    return rings
+
+
+def rasterize(rings, x0, y1, res, H, W) -> np.ndarray:
+    """Fill the rings into an H x W image with the even-odd rule (XOR of every ring).
+    Pixel (r, c) has its centre at (x0 + (c + 0.5) res, y1 - (r + 0.5) res)."""
+    mask = np.zeros((H, W), np.uint8)
+    shift = 4                                    # vertices at 1/16 px precision
+    for ring in rings:
+        px = (ring[:, 0] - x0) / res - 0.5
+        py = (y1 - ring[:, 1]) / res - 0.5
+        c0, c1 = max(int(np.floor(px.min())) - 1, 0), min(int(px.max()) + 2, W)
+        r0, r1 = max(int(np.floor(py.min())) - 1, 0), min(int(py.max()) + 2, H)
+        if c1 <= c0 or r1 <= r0:
+            continue
+        sub = np.zeros((r1 - r0, c1 - c0), np.uint8)
+        pts = np.round(np.stack([px - c0, py - r0], 1) * (1 << shift)).astype(np.int32)
+        cv2.fillPoly(sub, [pts], 1, lineType=cv2.LINE_8, shift=shift)
+        mask[r0:r1, c0:c1] ^= sub
+    return mask.astype(bool)
+
+
+class SvgMap:
+    """The ``free`` area of a floor plan: rings combined with the even-odd rule, in metres."""
+
+    def __init__(self, rings, meta: dict, viz: dict | None = None):
+        self.rings = [np.asarray(r, float) for r in rings if len(r) >= 3]
+        self.meta = dict(meta)
+        self.viz = viz or {}                               # display-only layers
+        pts = np.concatenate(self.rings) if self.rings else np.zeros((1, 2))
+        self.bbox = (*pts.min(axis=0), *pts.max(axis=0))   # xmin, ymin, xmax, ymax
+        self._raster: dict = {}
+
+    @property
+    def segments(self) -> np.ndarray:
+        """(N, 4): x1, y1, x2, y2 of every edge."""
+        segs = [np.hstack([r, np.roll(r, -1, axis=0)]) for r in self.rings]
+        return np.concatenate(segs) if segs else np.zeros((0, 4))
+
+    def raster(self, res: float = 0.02, pad: float = 0.2):
+        """(mask, x0, y1, res): mask[r, c] is True when the pixel centre
+        (x0 + (c + 0.5) res, y1 - (r + 0.5) res) is free. Kept per (res, pad)."""
+        key = (round(res, 6), round(pad, 6))
+        if key not in self._raster:
+            xmin, ymin, xmax, ymax = self.bbox
+            x0, y1 = xmin - pad, ymax + pad
+            W = int(np.ceil((xmax + pad - x0) / res))
+            H = int(np.ceil((y1 - (ymin - pad)) / res))
+            self._raster[key] = (rasterize(self.rings, x0, y1, res, H, W), x0, y1, res)
+        return self._raster[key]
+
+    @classmethod
+    def load(cls, path) -> "SvgMap":
+        root = ET.parse(path).getroot()
+        metadata = root.find(f"{{{SVG_NS}}}metadata")
+        meta = json.loads(metadata.text) if metadata is not None and metadata.text else {}
+        if meta.get("schema_version") not in (None, *READABLE_SCHEMAS):
+            raise ValueError(f"{path}: unsupported schema_version {meta.get('schema_version')}")
+        free, viz = None, {}
+        for p in root.iter(f"{{{SVG_NS}}}path"):
+            if p.get("id") == "free":
+                free = path_to_rings(p.get("d", ""))
+            elif p.get("id"):
+                viz[p.get("id")] = path_to_rings(p.get("d", ""))
+        if free is None:
+            raise ValueError(f"{path}: no path with id='free'")
+        return cls(free, meta, viz)

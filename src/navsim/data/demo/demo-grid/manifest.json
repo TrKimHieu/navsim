@@ -1,0 +1,241 @@
+{
+ "schema_version": "2.0",
+ "name": "demo-grid",
+ "env": "grid",
+ "tool_version": "0.8.0",
+ "created": "2026-09-27 14:26",
+ "config": {
+  "name": "demo-grid",
+  "env": "grid",
+  "source": {
+   "type": "isaac_scene_builder",
+   "path": "Isaac-Scene-Builder/output",
+   "prefix": "demo",
+   "geometry": "vector",
+   "mesh_dir": "Isaac-Scene-Builder/output/mesh_shapes",
+   "wall_m": 0.2,
+   "door_gap": [
+    0.35,
+    0.65
+   ],
+   "cell_m": 3.0,
+   "simplify_m": 0.01
+  },
+  "scenes": [
+   "S040",
+   "S105",
+   "S001",
+   "S082",
+   "S133",
+   "S130"
+  ],
+  "exclude": [],
+  "split": {
+   "train": 0.5,
+   "val": 0.25,
+   "test": 0.25,
+   "seed": 0
+  },
+  "slice": {
+   "floor_margin": 0.05,
+   "ceil_margin": 0.1,
+   "step": 0.1,
+   "res": 0.02,
+   "oversample": 4.0,
+   "min_ratio": 0.3,
+   "min_storey_m": 1.8,
+   "floor_band": 0.08,
+   "floor_close_m": 0.1,
+   "floor_mask": false,
+   "seed": 0,
+   "up": -1,
+   "slices": false
+  },
+  "grid": {
+   "margin": 0.04,
+   "floor_close": 0.1,
+   "max_hole_m2": 1.0,
+   "floor_cover": 0.9,
+   "roof_cover": 0.9,
+   "roof": true,
+   "min_area_m2": 10.0,
+   "flag_main_frac": 0.6,
+   "robot": "jetauto_pro",
+   "robot_size": null
+  },
+  "tasks": {
+   "k": 10,
+   "d_min": 8,
+   "budget": 200,
+   "slack": 20,
+   "repeat_p": 0.6,
+   "seed": 0,
+   "flag_fail": 0.1,
+   "verify": false
+  }
+ },
+ "splits": {
+  "train": [
+   "demo-S001",
+   "demo-S082",
+   "demo-S133"
+  ],
+  "val": [
+   "demo-S105",
+   "demo-S130"
+  ],
+  "test": [
+   "demo-S040"
+  ]
+ },
+ "robots": {
+  "jetauto_pro": {
+   "height_class": "h63",
+   "n_maps": 6,
+   "n_tasks": 60,
+   "flagged": [],
+   "maps": {
+    "demo-S001_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "levels": {
+      "easy": 0,
+      "medium": 5,
+      "hard": 1,
+      "starved": 4
+     },
+     "shape": [
+      56,
+      56
+     ],
+     "main_m2": 226.78,
+     "flags": []
+    },
+    "demo-S040_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "levels": {
+      "easy": 1,
+      "medium": 5,
+      "hard": 2,
+      "starved": 2
+     },
+     "shape": [
+      56,
+      56
+     ],
+     "main_m2": 224.88,
+     "flags": []
+    },
+    "demo-S082_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "levels": {
+      "easy": 0,
+      "medium": 5,
+      "hard": 1,
+      "starved": 4
+     },
+     "shape": [
+      56,
+      56
+     ],
+     "main_m2": 173.65,
+     "flags": []
+    },
+    "demo-S105_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "levels": {
+      "easy": 1,
+      "medium": 4,
+      "hard": 3,
+      "starved": 2
+     },
+     "shape": [
+      56,
+      56
+     ],
+     "main_m2": 214.0,
+     "flags": []
+    },
+    "demo-S130_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "levels": {
+      "easy": 1,
+      "medium": 1,
+      "hard": 2,
+      "starved": 6
+     },
+     "shape": [
+      79,
+      84
+     ],
+     "main_m2": 227.73,
+     "flags": []
+    },
+    "demo-S133_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "levels": {
+      "easy": 1,
+      "medium": 5,
+      "hard": 1,
+      "starved": 3
+     },
+     "shape": [
+      53,
+      65
+     ],
+     "main_m2": 96.22,
+     "flags": []
+    }
+   }
+  }
+ },
+ "config_hash": "b2735ba67beba46e",
+ "built_with": "0.8.0",
+ "source": {
+  "type": "isaac_scene_builder",
+  "path": "Isaac-Scene-Builder/output",
+  "prefix": "demo",
+  "geometry": "vector",
+  "mesh_dir": "Isaac-Scene-Builder/output/mesh_shapes",
+  "wall_m": 0.2,
+  "door_gap": [
+   0.35,
+   0.65
+  ],
+  "cell_m": 3.0,
+  "simplify_m": 0.01,
+  "verified_3d": false
+ },
+ "files": {
+  "grids/demo-S001_s0.json": "84c22e883a5d4ada6dbcee8ede3ff269aeb26a6e21926b86b39d4d2226abef1c",
+  "grids/demo-S001_s0.npz": "14c1ce9ab58eb85491d6531623692a9ab4cf12faeb459737695df29c05473007",
+  "grids/demo-S040_s0.json": "80dfe1371119376ed4a0de725b86898bc487b04029dcdc4c2df42c9f9f24edba",
+  "grids/demo-S040_s0.npz": "ee7c282f213b79b4b151cf9f250b8bc1c8b0393dbfcd478320bd00013a809785",
+  "grids/demo-S082_s0.json": "b93a88751ccb508e141f81def50d431cf869a34f2a31a15ddef5a3da74f5352b",
+  "grids/demo-S082_s0.npz": "983b015468eb7599eed0c2b1ac1923d6a2ed3a865f5abbfbd66d226d6e02e6a5",
+  "grids/demo-S105_s0.json": "8defa0d9cfd2bad8a41230b8d052b4b55f3bdd65d31176cfb95b11993f9c0d99",
+  "grids/demo-S105_s0.npz": "6821950c98a215e0a968c272e02931136c8d3dea644e16fa51daf53d53298216",
+  "grids/demo-S130_s0.json": "f52d97bd7d1d2ff841c57955ad8a1eb86a3ea292c09327893fa6aa7695200623",
+  "grids/demo-S130_s0.npz": "f4e3ef985ef3130e4e6bbca3f4e6080745615b6dee82a1421fed9dfdd42a3039",
+  "grids/demo-S133_s0.json": "d79efec6f302b08e590b9e3a8c227443835a54738585e519ec69b48754d50308",
+  "grids/demo-S133_s0.npz": "f2936efa92ba6e9136a1cfe5ebd4aa3cd2620f0ab20e2cb893d870172f55780f",
+  "tasks/jetauto_pro/demo-S001_s0.json": "31e5a324240588d0c6c1428c8214a8a176779b64ac617b7a56dac2f2ce24e2bc",
+  "tasks/jetauto_pro/demo-S040_s0.json": "fd245d6f1d17a1ed16829689d0a67cf9c960bf395ebad3d85d1b6fc74e56ba8a",
+  "tasks/jetauto_pro/demo-S082_s0.json": "4a7ae419095a7a72a7ed9394e43e0eab06bc0ed01d43e0092a8f9ceef9dc0ce8",
+  "tasks/jetauto_pro/demo-S105_s0.json": "ee20dfffded764bef9ec54f3092b5fb16731b503b3983dbd29a4e1b39fd79f0e",
+  "tasks/jetauto_pro/demo-S130_s0.json": "c1d94928fa123fb649692f86ad7b1549e8096663e94026f87bf2910a45cb4b27",
+  "tasks/jetauto_pro/demo-S133_s0.json": "985991caa11351f2d9b18c74111f5e3ce10956bb02d9ba7b38ea8382991e00b5",
+  "robots/jetauto_pro.json": "1dbae824c72b06d3e179faf206bd175f691d9bde341a8a6c57495694aa4fb506"
+ }
+}

@@ -1,0 +1,407 @@
+{
+ "schema_version": "2.0",
+ "name": "demo-svg",
+ "env": "svg",
+ "tool_version": "0.8.0",
+ "created": "2026-09-27 14:26",
+ "config": {
+  "name": "demo-svg",
+  "env": "svg",
+  "source": {
+   "type": "isaac_scene_builder",
+   "path": "Isaac-Scene-Builder/output",
+   "prefix": "demo",
+   "geometry": "vector",
+   "mesh_dir": "Isaac-Scene-Builder/output/mesh_shapes",
+   "wall_m": 0.2,
+   "door_gap": [
+    0.35,
+    0.65
+   ],
+   "cell_m": 3.0,
+   "simplify_m": 0.01
+  },
+  "scenes": [
+   "S040",
+   "S105",
+   "S001",
+   "S082",
+   "S133",
+   "S130"
+  ],
+  "exclude": [],
+  "split": {
+   "train": 0.5,
+   "val": 0.25,
+   "test": 0.25,
+   "seed": 0
+  },
+  "slice": {
+   "floor_margin": 0.05,
+   "ceil_margin": 0.1,
+   "step": 0.1,
+   "res": 0.02,
+   "oversample": 4.0,
+   "min_ratio": 0.3,
+   "min_storey_m": 1.8,
+   "floor_band": 0.08,
+   "floor_close_m": 0.1,
+   "floor_mask": false,
+   "seed": 0,
+   "up": -1,
+   "slices": false
+  },
+  "robots": [
+   "turtlebot4",
+   "clearpath_jackal"
+  ],
+  "height_classes": {
+   "h36": 0.36,
+   "h63": 0.626,
+   "h145": 1.45
+  },
+  "map": {
+   "epsilon_px": 0.5,
+   "min_iou": 0.98,
+   "min_free_m2": 2.0
+  },
+  "tasks": {
+   "k": 10,
+   "min_geo": 1.0,
+   "max_geo": 30.0,
+   "min_gdr": 1.1,
+   "clearance": 0.05,
+   "success_radius": 0.2,
+   "seed": 0,
+   "flag_fail": 0.1,
+   "verify": false
+  }
+ },
+ "splits": {
+  "train": [
+   "demo-S001",
+   "demo-S082",
+   "demo-S133"
+  ],
+  "val": [
+   "demo-S105",
+   "demo-S130"
+  ],
+  "test": [
+   "demo-S040"
+  ]
+ },
+ "robots": {
+  "turtlebot4": {
+   "height_class": "h36",
+   "map_stats": {
+    "demo-S001_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 33,
+     "n_vertices": 1507,
+     "free_m2": 258.529,
+     "iou": 0.98331,
+     "unsafe_m2": 1.1088,
+     "unsafe_tol_m2": 0.0,
+     "lost_m2": 3.2594,
+     "lost_tol_m2": 0.3094,
+     "bev_free_m2": 260.67,
+     "flags": []
+    },
+    "demo-S040_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 36,
+     "n_vertices": 833,
+     "free_m2": 258.031,
+     "iou": 0.98566,
+     "unsafe_m2": 1.135,
+     "unsafe_tol_m2": 0.0013,
+     "lost_m2": 2.6025,
+     "lost_tol_m2": 0.21,
+     "bev_free_m2": 259.518,
+     "flags": []
+    },
+    "demo-S082_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 89,
+     "n_vertices": 1951,
+     "free_m2": 235.604,
+     "iou": 0.97351,
+     "unsafe_m2": 1.5044,
+     "unsafe_tol_m2": 0.0,
+     "lost_m2": 4.8663,
+     "lost_tol_m2": 0.5556,
+     "bev_free_m2": 238.968,
+     "flags": []
+    },
+    "demo-S105_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 51,
+     "n_vertices": 1300,
+     "free_m2": 256.449,
+     "iou": 0.98259,
+     "unsafe_m2": 1.2706,
+     "unsafe_tol_m2": 0.0013,
+     "lost_m2": 3.25,
+     "lost_tol_m2": 0.2288,
+     "bev_free_m2": 258.416,
+     "flags": []
+    },
+    "demo-S130_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 106,
+     "n_vertices": 2409,
+     "free_m2": 350.454,
+     "iou": 0.97075,
+     "unsafe_m2": 3.1019,
+     "unsafe_tol_m2": 0.0013,
+     "lost_m2": 7.3663,
+     "lost_tol_m2": 0.6763,
+     "bev_free_m2": 354.726,
+     "flags": []
+    },
+    "demo-S133_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 96,
+     "n_vertices": 1998,
+     "free_m2": 172.416,
+     "iou": 0.96091,
+     "unsafe_m2": 1.8638,
+     "unsafe_tol_m2": 0.0119,
+     "lost_m2": 5.0731,
+     "lost_tol_m2": 0.6419,
+     "bev_free_m2": 175.615,
+     "flags": []
+    }
+   },
+   "n_maps": 6,
+   "n_tasks": 60,
+   "flagged": [],
+   "maps": {
+    "demo-S001_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 207.73
+    },
+    "demo-S040_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 206.28
+    },
+    "demo-S082_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 147.11
+    },
+    "demo-S105_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 198.56
+    },
+    "demo-S130_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 216.24
+    },
+    "demo-S133_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 83.8
+    }
+   }
+  },
+  "clearpath_jackal": {
+   "height_class": "h36",
+   "map_stats": {
+    "demo-S001_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 33,
+     "n_vertices": 1507,
+     "free_m2": 258.529,
+     "iou": 0.98331,
+     "unsafe_m2": 1.1088,
+     "unsafe_tol_m2": 0.0,
+     "lost_m2": 3.2594,
+     "lost_tol_m2": 0.3094,
+     "bev_free_m2": 260.67,
+     "flags": []
+    },
+    "demo-S040_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 36,
+     "n_vertices": 833,
+     "free_m2": 258.031,
+     "iou": 0.98566,
+     "unsafe_m2": 1.135,
+     "unsafe_tol_m2": 0.0013,
+     "lost_m2": 2.6025,
+     "lost_tol_m2": 0.21,
+     "bev_free_m2": 259.518,
+     "flags": []
+    },
+    "demo-S082_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 89,
+     "n_vertices": 1951,
+     "free_m2": 235.604,
+     "iou": 0.97351,
+     "unsafe_m2": 1.5044,
+     "unsafe_tol_m2": 0.0,
+     "lost_m2": 4.8663,
+     "lost_tol_m2": 0.5556,
+     "bev_free_m2": 238.968,
+     "flags": []
+    },
+    "demo-S105_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 51,
+     "n_vertices": 1300,
+     "free_m2": 256.449,
+     "iou": 0.98259,
+     "unsafe_m2": 1.2706,
+     "unsafe_tol_m2": 0.0013,
+     "lost_m2": 3.25,
+     "lost_tol_m2": 0.2288,
+     "bev_free_m2": 258.416,
+     "flags": []
+    },
+    "demo-S130_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 106,
+     "n_vertices": 2409,
+     "free_m2": 350.454,
+     "iou": 0.97075,
+     "unsafe_m2": 3.1019,
+     "unsafe_tol_m2": 0.0013,
+     "lost_m2": 7.3663,
+     "lost_tol_m2": 0.6763,
+     "bev_free_m2": 354.726,
+     "flags": []
+    },
+    "demo-S133_s0": {
+     "geometry": "csv",
+     "simplify_m": 0.01,
+     "n_rings": 96,
+     "n_vertices": 1998,
+     "free_m2": 172.416,
+     "iou": 0.96091,
+     "unsafe_m2": 1.8638,
+     "unsafe_tol_m2": 0.0119,
+     "lost_m2": 5.0731,
+     "lost_tol_m2": 0.6419,
+     "bev_free_m2": 175.615,
+     "flags": []
+    }
+   },
+   "n_maps": 6,
+   "n_tasks": 60,
+   "flagged": [],
+   "maps": {
+    "demo-S001_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 181.86
+    },
+    "demo-S040_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 180.16
+    },
+    "demo-S082_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 108.8
+    },
+    "demo-S105_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 169.72
+    },
+    "demo-S130_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 157.14
+    },
+    "demo-S133_s0": {
+     "tasks": 10,
+     "checked": 0,
+     "verify_fail": 0.0,
+     "flags": [],
+     "cdisk_m2": 50.78
+    }
+   }
+  }
+ },
+ "config_hash": "141dcf8797e103f6",
+ "built_with": "0.8.0",
+ "source": {
+  "type": "isaac_scene_builder",
+  "path": "Isaac-Scene-Builder/output",
+  "prefix": "demo",
+  "geometry": "vector",
+  "mesh_dir": "Isaac-Scene-Builder/output/mesh_shapes",
+  "wall_m": 0.2,
+  "door_gap": [
+   0.35,
+   0.65
+  ],
+  "cell_m": 3.0,
+  "simplify_m": 0.01,
+  "verified_3d": false
+ },
+ "files": {
+  "maps/h36/demo-S001_s0.svg": "177faaa8ed8f64b1644510719b230e0848c7c88435457bc263effed6f7fd3828",
+  "maps/h36/demo-S040_s0.svg": "8416295019a5397805a8b8bafe7034e3a2ca8f8a59f63325e1a67aa542ea83c3",
+  "maps/h36/demo-S082_s0.svg": "ec92ac25305c55d257ec7f4320558876ec8fd1bc57d87afe101d4353e2f3b9fe",
+  "maps/h36/demo-S105_s0.svg": "5370b4e36346f8819d2c8fef4fef870a5164b862b0365b473eabd9eab42269b6",
+  "maps/h36/demo-S130_s0.svg": "945b0b6c22c293ccfbebfd1751c32389ab557732b72f2f22e83c5d05a4ce8caf",
+  "maps/h36/demo-S133_s0.svg": "0a54bb4ac4fe2f434907841b13729244128b22b404cffd07414391d16f0d87c1",
+  "tasks/clearpath_jackal/demo-S001_s0.json": "61378c2626b6f6e387c050cc1a654666a892466125f62bb8277be5c116e20b71",
+  "tasks/clearpath_jackal/demo-S040_s0.json": "450060ead064cf33095c65811fcc756a013ec67c3afa2a063bbb4103323fc195",
+  "tasks/clearpath_jackal/demo-S082_s0.json": "ded6aafa155024c25505f416cabf0a8ac22e85b956e98bca8f7bf1223d6c081f",
+  "tasks/clearpath_jackal/demo-S105_s0.json": "f248c538e1e39f30247220cabf60f68a8162a59c1a5d90e213ae411342a18a26",
+  "tasks/clearpath_jackal/demo-S130_s0.json": "f2b64a306d2be56ad16a2bf6dcd10187e7b02f5914cafb97994cc7f7080f1d74",
+  "tasks/clearpath_jackal/demo-S133_s0.json": "75c46a6429e2396c41c301a0ce2a94beb1c11b6bacf5a099c21edafef30c2e25",
+  "tasks/turtlebot4/demo-S001_s0.json": "7532cb5cb8dfa28a7ec5410dd22c2aded54ee983303dbabf80ad7d0ecc940662",
+  "tasks/turtlebot4/demo-S040_s0.json": "3e071e26b719c109d2afc5195a7309934403af5680b8f8bb9e5a461cf30f2398",
+  "tasks/turtlebot4/demo-S082_s0.json": "a4b4350578ba7548900a5795b994b0f0bd0138b7b5c69db83fd47514551a8af5",
+  "tasks/turtlebot4/demo-S105_s0.json": "95580383ede92d6a63083595de9184e8fac155201a5c75fe73a9c19c8e49a7f9",
+  "tasks/turtlebot4/demo-S130_s0.json": "bd9bfd69ce6502856c5df220a488f75140561e0c430ff155d5d65fd8ec348e8b",
+  "tasks/turtlebot4/demo-S133_s0.json": "58d57453624ee2b65aa36fa8b971470694d20709868ccb85586ffaa17bb93063",
+  "robots/clearpath_jackal.json": "b6ff29fee6eee9d4c3a1e44d13a8ffce2dc9d73dc02e9dc4e8c147201c39ac45",
+  "robots/turtlebot4.json": "4a2fc6780ad1bb48d612a51bbdd7b7c9e41883c4f351d956b1b50c2f35102eb9"
+ }
+}

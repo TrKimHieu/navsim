@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NavSim – Cây lệnh</title>
+<style>
+:root{
+  --bg:#f6f8fc; --card:#fff; --ink:#1d2433; --muted:#667089; --line:#c9d3e6; --accent:#3b6df0;
+  --c-data:#0e9f6e; --c-robot:#d97706; --c-env:#3b6df0; --c-state:#9333ea; --c-wrap:#db2777;
+  --c-eval:#0891b2; --c-vis:#e11d48; --c-par:#65a30d; --c-cli:#475569; --c-var:#a16207;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Segoe UI",system-ui,sans-serif}
+header{padding:28px 24px 8px;max-width:1100px;margin:0 auto}
+h1{margin:0 0 4px;font-size:26px}
+header p{margin:0;color:var(--muted)}
+.bar{max-width:1100px;margin:14px auto 0;padding:0 24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.bar input{flex:1;min-width:200px;padding:9px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+.bar button{padding:9px 14px;border:1px solid var(--line);background:#fff;border-radius:10px;cursor:pointer;font:inherit}
+.bar button:hover{border-color:var(--accent);color:var(--accent)}
+.legend{max-width:1100px;margin:10px auto 0;padding:0 24px;font-size:13px;color:var(--muted)}
+main{max-width:1100px;margin:16px auto 60px;padding:0 24px;overflow-x:auto}
+
+/* tree */
+.tree,.tree ul{list-style:none;margin:0;padding:0}
+.tree ul{margin-left:22px;padding-left:22px;position:relative}
+.tree ul::before{content:"";position:absolute;left:0;top:0;bottom:19px;border-left:2px solid var(--line)}
+.tree li{position:relative;padding:5px 0}
+.tree ul>li::before{content:"";position:absolute;left:-22px;top:19px;width:22px;border-top:2px solid var(--line)}
+.node{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;border:1.5px solid var(--col,var(--line));
+  background:#fff;cursor:pointer;font:inherit;color:var(--ink);transition:.12s}
+.node:hover{background:var(--col);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.node code{font:600 13.5px Consolas,"Cascadia Mono",monospace}
+.node .tag{font-size:11px;color:var(--muted);font-weight:400}
+.node:hover .tag{color:#ffffffcc}
+.group{--col:var(--line);background:var(--col);border-color:var(--col);color:#fff;font-weight:600}
+.group:hover{filter:brightness(1.08)}
+.group .caret{display:inline-block;transition:.15s;font-size:11px}
+li.closed>ul{display:none}
+li.closed>.group .caret{transform:rotate(-90deg)}
+.root>.node{font-size:17px;padding:8px 18px;--col:#1d2433;background:#1d2433;color:#fff}
+.leaf.hit .node{background:#fff7c2;border-color:#e0b400}
+.hide{display:none!important}
+
+/* modal */
+#ov{position:fixed;inset:0;background:rgba(20,28,48,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:9}
+#ov.on{display:flex}
+.modal{background:var(--card);border-radius:16px;max-width:760px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mh{padding:20px 24px 12px;border-bottom:4px solid var(--col);position:sticky;top:0;background:var(--card)}
+.mh .path{font-size:12px;color:var(--muted)}
+.mh h2{margin:2px 0 0;font:700 20px Consolas,"Cascadia Mono",monospace;word-break:break-all}
+.x{position:absolute;right:16px;top:14px;border:0;background:#eef2fa;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px}
+.mb{padding:8px 24px 24px}
+.mb h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 6px}
+pre{margin:0;background:#f1f4fb;border:1px solid #e2e8f5;border-radius:10px;padding:12px 14px;overflow:auto;font:13px/1.5 Consolas,"Cascadia Mono",monospace}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{border-bottom:1px solid #e6ebf5;padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px}
+td:first-child{font:600 13px Consolas,monospace;white-space:nowrap}
+.mb p{margin:6px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧭 NavSim – cây lệnh của thư viện</h1>
+  <p>Môi trường điều hướng robot cho học tăng cường (Gymnasium / PettingZoo). Bấm nhóm để thu/mở, bấm tên hàm để xem giải thích chi tiết.</p>
+</header>
+<div class="bar">
+  <input id="q" placeholder="Tìm hàm… (vd: reset, lidar, reward)">
+  <button id="exp">Mở tất cả</button>
+  <button id="col">Thu tất cả</button>
+</div>
+<div class="legend">Phiên bản 0.1.0 · Python ≥ 3.10 · CPU · <code>import navsim</code></div>
+<main><ul class="tree" id="tree"></ul></main>
+
+<div id="ov"><div class="modal" id="modal"></div></div>
+
+<script>
+// ---------- dữ liệu ----------
+// n(tên, chữ ký, mô tả, {params:[[tên,mô tả]], returns, example, note})
+const n = (name, sig, desc, x = {}) => ({name, sig, desc, ...x});
+const g = (name, color, children, desc) => ({name, color, children, desc});
+
+const NAV_ARGS = [
+ ["dataset","Tên hoặc thư mục dataset (svg). Mặc định \"demo-svg\"."],
+ ["robot","Mã robot (xem navsim robots). Mặc định: robot duy nhất, nếu không thì \"turtlebot4\"."],
+ ["split","\"train\" / \"val\" / \"test\" (chia theo tòa nhà); None = mọi bản đồ."],
+ ["map_id, task_idx","Luôn dùng đúng bản đồ / nhiệm vụ này."],
+ ["normalize_obs","True: quan sát chuẩn hoá về [0,1] / [-1,1]; False: mét, m/s, rad/s."],
+ ["dt","Số giây mỗi step (0.1)."],
+ ["n_beams","Số tia LiDAR trong quan sát (72)."],
+ ["lidar_noise","Độ lệch chuẩn nhiễu Gauss của LiDAR (m), mặc định 0."],
+ ["on_collision","\"stop\": robot dừng, episode tiếp tục; \"terminate\": kết thúc episode."],
+ ["time_limit / time_factor","Thời lượng episode (s). None: time_factor (3.0) × thời gian tối thiểu của chuyến đi."],
+ ["success_radius","Bán kính coi là tới đích (m), lấy từ file task (0.2)."],
+ ["task_filter","Bộ lọc curriculum, xem set_task_filter."],
+ ["nav_info","True: thêm goal_geodesic_m, progress_m, goal_distance_m, wall_distance_m vào info."],
+ ["render_mode","\"rgb_array\": env.render() trả về ảnh."],
+ ["map_repeat","Giữ một bản đồ ngẫu nhiên N episode liên tiếp (đỡ tải bản đồ)."],
+ ["map_cache, field_cache, disk_cache, clearance","Bộ nhớ đệm RAM / đĩa và khoảng hở của planner (m)."]
+];
+
+const STATE_COMMON = [
+ n("position","state.position","Vị trí hiện tại. Nav: (x, y) mét. Grid: (hàng, cột)."),
+ n("start","state.start","Điểm xuất phát. Nav: (x, y, theta). Grid: (hàng, cột)."),
+ n("goal","state.goal","Đích. Nav: (x, y). Grid: (hàng, cột)."),
+ n("start_geodesic","state.start_geodesic","Đường ngắn nhất từ start → goal. Nav: mét. Grid: số nước đi ít nhất."),
+ n("trajectory","state.trajectory","Mảng lịch sử từ lúc reset. Nav: (N,4) = time, x, y, theta. Grid: (N,2) = hàng, cột."),
+ n("path_length","state.path_length","Quãng đường đã đi. Nav: mét. Grid: số nước đi."),
+ n("steps","state.steps","Số step đã chạy từ lúc reset.",{note:"Dùng state.steps == 1 để reset biến riêng trong class reward."}),
+ n("collided","state.collided","True nếu step vừa rồi va chạm (grid: nước đi bị chặn)."),
+ n("n_collisions","state.n_collisions","Số step có va chạm tính từ đầu episode."),
+ n("reached_goal","state.reached_goal","True khi robot đang ở đích."),
+ n("done","state.done","True khi episode đã kết thúc với robot này."),
+ n("goal_distance","state.goal_distance(point=None)","Khoảng cách đường thẳng tới đích (Grid: tính bằng ô).",{params:[["point","Mặc định là vị trí robot"]]}),
+ n("geodesic_distance","state.geodesic_distance(point=None)","Đường đi ngắn nhất có thể lái tới đích (inf nếu không tới được). Grid: số nước đi ít nhất.",{params:[["point / cell","Mặc định là vị trí robot"]]}),
+ n("shortest_path","state.shortest_path(point=None)","Mảng (M,2) các điểm từ point tới đích theo đường ngắn nhất.",{returns:"np.ndarray (M,2)"}),
+ n("lidar","state.lidar()","Khoảng cách LiDAR không nhiễu (m; grid: ô). Hướng các tia: beam_angles.",{returns:"np.ndarray"}),
+];
+const STATE_NAV = [
+ n("pose","state.pose","(x, y, theta) – tư thế robot."),
+ n("heading","state.heading","Góc hướng theta (rad)."),
+ n("velocity","state.velocity","(v, w) hoặc (v, vy, w) sau step cuối."),
+ n("time, time_limit","state.time / state.time_limit","Giây đã trôi / giới hạn thời gian."),
+ n("wall_distance","state.wall_distance(point=None)","Khoảng cách tới bức tường gần nhất (m). Chỉ có ở Nav-v0 / nav_v0."),
+ n("fits","state.fits(x, y, theta)","Thân robot có vừa chỗ đó không (không đâm tường)?",{returns:"bool"}),
+ n("robot, success_radius","state.robot / state.success_radius","Mô hình robot và bán kính đích."),
+];
+const STATE_GRID = [
+ n("is_free","state.is_free(cell)","Ô đó có trống không? (chỉ GridNav-v0)",{returns:"bool"}),
+ n("budget","state.budget","Số step tối đa trước khi truncated."),
+ n("cell_m","state.cell_m","Kích thước một ô (m)."),
+];
+
+const ROBOT_MEMBERS = [
+ n("id, name","robot.id / robot.name","Mã và tên đầy đủ của robot."),
+ n("drive","robot.drive","\"differential\" hoặc \"omnidirectional\" (thuộc tính omni = True nếu omni)."),
+ n("footprint","robot.footprint","Đa giác (M,2) thân robot trong hệ tọa độ robot (m): x tiến, y trái."),
+ n("r_circ","robot.r_circ","Bán kính vòng tròn nhỏ nhất quanh tâm chứa được robot (m)."),
+ n("v_max, v_min, vy_max, w_max","robot.v_max …","Giới hạn tốc độ: tiến, lùi (≤0), ngang (m/s); quay (rad/s)."),
+ n("lidar","robot.lidar","dict {range_min, range_max, fov, beams, …} (m, rad)."),
+ n("height, height_class","robot.height / robot.height_class","Chiều cao (m) và nhóm bản đồ dùng cho robot này."),
+ n("action_dim, raw","robot.action_dim / robot.raw","2 hoặc 3 chiều hành động; nội dung file JSON gốc."),
+];
+
+const DS_MEMBERS = [
+ n("name, env_type, root, robots, splits","ds.name …","Tên; \"svg\" hoặc \"grid\"; thư mục; danh sách robot; split → các tòa nhà."),
+ n("maps","ds.maps(robot, split=None)","Danh sách map id.",{returns:"list[str]"}),
+ n("tasks","ds.tasks(robot, map_id)","Danh sách nhiệm vụ của bản đồ.",{returns:"list[dict]",
+   example:'{"id", "start": {"x","y","theta"}, "goal": {"x","y"},\n "geodesic_m", "euclidean_m", "labels"}\n# grid: start/goal có thêm "cell": [row, col]'}),
+ n("robot","ds.robot(robot_id)","Trả về mô hình Robot.",{returns:"Robot"}),
+ n("height_class","ds.height_class(robot_id)","Nhóm chiều cao (tập bản đồ) của robot."),
+ n("default_robot","ds.default_robot(robot=None)","Robot mặc định của dataset."),
+ n("svg_path","ds.svg_path(robot, map_id)","Đường dẫn file SVG của bản đồ.",{returns:"Path"}),
+ n("grid_arrays, grid_meta","ds.grid_arrays(map_id) / ds.grid_meta(map_id)","Mảng lưới và metadata (cell_m, …) của dataset grid."),
+ n("summary","ds.summary()","Số bản đồ và nhiệm vụ theo robot và split.",{returns:"dict"}),
+ n("validate","ds.validate()","Kiểm tra dataset; trả về danh sách lỗi (rỗng = hợp lệ).",{returns:"list[str]"}),
+];
+
+const RESET_DOC = {params:[["seed","Seed ngẫu nhiên"],["options","Chọn episode: {\"map_id\",\"task_idx\"} hoặc {\"map_id\",\"start\",\"goal\"} (start/goal tuỳ chỉnh, task_id = -1)"]],returns:"(obs, info)"};
+const STEP_DOC = {returns:"(obs, reward, terminated, truncated, info) — reward luôn 0.0; hãy dùng wrapper Reward để tự viết"};
+
+const TREE = g("navsim","#1d2433",[
+ g("📦 Dữ liệu","var(--c-data)",[
+   n("setup","navsim.setup(datasets=\"demo-svg\", token=None, data_dir=None, force=False, quiet=False)",
+     "Làm cho dataset có sẵn trên máy; nếu chưa có thì tải một lần từ Hugging Face.",
+     {params:[["datasets","Tên hoặc list tên"],["token","HF token (mặc định $HF_TOKEN hoặc secret Colab/Kaggle)"],["data_dir","Thư mục tải (mặc định ~/.navsim/datasets)"],["force","Tải lại"],["quiet","Không in tiến trình"]],
+      returns:"Dataset (hoặc list nếu truyền list)",example:'navsim.setup("isb-svg-v1")'}),
+   n("load_dataset","navsim.load_dataset(name_or_path)","Mở dataset theo tên hoặc đường dẫn. Tên được tìm trong $NAVSIM_DATASETS, ~/.navsim/datasets, /kaggle/input/*/<tên> và các demo kèm gói.",{returns:"Dataset"}),
+   n("list_datasets","navsim.list_datasets()","Liệt kê các dataset đang có trên máy.",{returns:"list[Dataset]"}),
+   g("Dataset (thành viên)","var(--c-data)",DS_MEMBERS,"Đối tượng trả về bởi load_dataset / setup."),
+ ]),
+ g("🤖 Robot","var(--c-robot)",[
+   n("list_robots","navsim.list_robots()","Danh sách id robot: agilex_limo, clearpath_jackal, jetauto_pro, kobuki, pal_tiago, turtlebot3_burger, turtlebot3_waffle_pi, turtlebot4, turtlebot4_lite.",{returns:"list[str]"}),
+   n("load_robot","navsim.load_robot(id_or_json_path)","Nạp một robot theo id hoặc file JSON (thư mục thêm: $NAVSIM_ROBOTS).",{returns:"Robot"}),
+   g("Robot (thành viên)","var(--c-robot)",ROBOT_MEMBERS,"Mô hình robot: kích thước, tốc độ, LiDAR."),
+ ]),
+ g("🌍 Môi trường","var(--c-env)",[
+   g("gym.make(\"NavSim/Nav-v0\")","var(--c-env)",[
+     n("tham số khởi tạo","gym.make(\"NavSim/Nav-v0\", **kwargs)","Môi trường một robot trên mặt bằng tòa nhà (đơn vị mét), API Gymnasium.",
+       {params:NAV_ARGS,example:'env = gym.make("NavSim/Nav-v0", dataset="demo-svg", robot="turtlebot4", split="train")',
+        note:"Action: Box(-1,1,(2,)) = (tốc độ tiến, tốc độ quay) theo tỉ lệ giới hạn robot; (3,) với robot omni (jetauto_pro). Observation: Dict(lidar:(n_beams,), goal:(3,), velocity:(2,)|(3,))."}),
+     n("reset","env.reset(*, seed=None, options=None)","Bắt đầu episode mới: chọn bản đồ ngẫu nhiên của split rồi nhiệm vụ ngẫu nhiên (có seed).",
+       {...RESET_DOC,note:"info lúc reset: map_id, task_id, split, geodesic_m, time_limit."}),
+     n("step","env.step(action)","Chạy một bước mô phỏng (dt giây).",
+       {...STEP_DOC,note:"terminated: tới đích (hoặc va chạm khi on_collision=\"terminate\"). truncated: hết giờ. Step cuối có thêm success, spl, termination (\"success\"/\"collision\"/\"time_limit\")."}),
+     n("render","env.render()","Với render_mode=\"rgb_array\", trả về ảnh (H,W,3) uint8.",{returns:"np.ndarray"}),
+     n("close","env.close()","Giải phóng tài nguyên."),
+     n("robot_state","env.unwrapped.robot_state()","Đối tượng RobotState luôn phản ánh trạng thái mới nhất — dùng để viết reward.",{returns:"RobotState"}),
+     n("map_ids","env.unwrapped.map_ids","Các bản đồ của split hiện tại."),
+     n("tasks_of","env.unwrapped.tasks_of(map_id)","Các nhiệm vụ (list dict) của một bản đồ.",{returns:"list[dict]"}),
+     n("set_task_filter","env.unwrapped.set_task_filter(**criteria)","Chỉ giữ các nhiệm vụ khớp mọi tiêu chí (curriculum). Không đối số = bỏ lọc.",
+       {returns:'{"maps": n, "tasks": n}',example:'env.unwrapped.set_task_filter(geodesic_m=(1.0, 5.0))\nenv.unwrapped.set_task_filter(level=["easy","medium"])\nenv.unwrapped.set_task_filter()   # bỏ lọc',
+        note:"Tiêu chí tra trong task (geodesic_m, euclidean_m) rồi trong labels. Giá trị: khoảng (min,max), {\"min\":…}, list giá trị cho phép, hoặc một giá trị. Môi trường vector: venv.call(...) / venv.env_method(...)."}),
+     n("thuộc tính khác","env.unwrapped.{map, robot, tasks, world, pose, task, dt, beam_angles}","map (SvgMap, map.raster(res)), robot (mô hình), tasks (nhiệm vụ của bản đồ hiện tại), world (bộ mô phỏng), beam_angles (hướng tia LiDAR)."),
+   ],"Một robot, mặt bằng liên tục."),
+   g("gym.make(\"NavSim/GridNav-v0\")","var(--c-env)",[
+     n("tham số khởi tạo","gym.make(\"NavSim/GridNav-v0\", **kwargs)","Môi trường lưới: một ô = một thân robot. Hành động rời rạc.",
+       {params:[["dataset","Dataset grid, mặc định \"demo-grid\""],["robot, split, map_id, task_idx, task_filter, render_mode, map_repeat","Như Nav-v0"],["goal_obs","True: thêm đích vào observation (cần để lái TỚI đích)"],["normalize_obs","Chia LiDAR và goal cho lidar_range"],["budget","Số step trước khi truncated (200)"],["lidar_rays, lidar_range","Số tia (22) và tầm (10 ô)"],["difficulty","\"easy\"/\"medium\"/\"hard\"/\"starved\": chỉ lấy nhiệm vụ mức đó"]],
+        note:"Action: Discrete(4) = 0 lên, 1 xuống, 2 trái, 3 phải; nước đi bị chặn thì đứng yên (tính là va chạm). Obs: Box(0,lidar_range,(lidar_rays,)); với goal_obs=True: Dict(lidar, goal:(2,))."}),
+     n("reset / step / render / close","env.reset(...) · env.step(a) · env.render() · env.close()","Giống Nav-v0, nhưng info của reset có start, goal, d_bfs, level, p0, sa_uniform, sa_persist, starved; mỗi step có steps, collided, goal_geodesic, progress, d_bfs.",STEP_DOC),
+     n("robot_state","env.unwrapped.robot_state()","Trả về GridRobotState (đơn vị: ô).",{returns:"GridRobotState"}),
+     n("map_ids / tasks_of / set_task_filter","giống Nav-v0","Chọn episode và curriculum, ví dụ set_task_filter(level=\"easy\")."),
+     n("grid, lidar_ranges, rgb_frame","env.unwrapped.grid · lidar_ranges() · rgb_frame(cell=8)","grid: mảng lưới (0 = trống); lidar_ranges: khoảng cách LiDAR (ô); rgb_frame: ảnh của env."),
+   ],"Một robot, lưới ô."),
+   g("navsim.multiagent.nav_v0","var(--c-env)",[
+     n("parallel_env","nav_v0.parallel_env(**kwargs)","Môi trường nhiều robot trên một bản đồ, API PettingZoo ParallelEnv. Nhận mọi tham số của Nav-v0 (trừ task_idx) cùng các tham số dưới.",
+       {params:[["n_agents","Số robot, cùng mẫu robot (2)"],["robots","Đội hỗn hợp, vd [\"turtlebot4\",\"clearpath_jackal\"] (cùng height class)"],["flatten_obs","True: mỗi robot một Box phẳng (SuperSuit, BenchMARL)"],["on_done","\"park\": robot xong đứng lại làm chướng ngại; \"remove\": biến mất"],["separation","Khoảng cách thêm (m) giữa start/goal các robot (0.1)"],["max_tries","Số lần bốc ngẫu nhiên mỗi robot trước khi đổi bản đồ (50)"]],
+        example:'from navsim.multiagent import nav_v0\nenv = nav_v0.parallel_env(dataset="demo-svg", robot="turtlebot4", n_agents=4, split="train")\nobs, infos = env.reset(seed=0)\nwhile env.agents:\n    obs, rew, term, trunc, infos = env.step({a: policy(obs[a]) for a in env.agents})',
+        note:"Agent tên robot_0 … robot_{n-1}. Robot xong rời env.agents; episode kết thúc khi env.agents rỗng. Mỗi robot thấy và va chạm với robot khác."}),
+     n("env","nav_v0.env(**kwargs)","Cùng môi trường nhưng theo API AEC (lần lượt từng agent)."),
+     n("raw_env","nav_v0.raw_env","Chính lớp môi trường."),
+     n("reset","env.reset(seed=None, options=None)","Trả về (obs, infos) — dict theo agent. options có thể là danh sách mỗi robot một mục: {\"task_idx\":[i0,None,…]} hoặc {\"start\":[…],\"goal\":[…]}.",{returns:"(obs, infos)"}),
+     n("step","env.step(actions)","actions: dict {agent: action}. Trả về 5 dict (obs, rewards, terminations, truncations, infos) — reward mỗi robot = 0.0."),
+     n("robot_state","env.robot_state(agent)","RobotState của một robot.",{returns:"RobotState"}),
+     n("state","env.state()  /  env.state_space","Trạng thái toàn cục cho critic tập trung: 10 giá trị mỗi robot (x, y, cos, sin, v, vy, w, goal x, goal y, active).",{returns:"np.ndarray"}),
+     n("observation_space / action_space","env.observation_space(agent) · env.action_space(agent)","Không gian quan sát / hành động của từng agent."),
+     n("render / close","env.render() · env.close()","Vẽ khung hình / đóng môi trường."),
+   ],"Nhiều robot (PettingZoo)."),
+ ]),
+ g("📍 RobotState (viết reward)","var(--c-state)",[
+   n("cách lấy","state = env.unwrapped.robot_state()   |   state = env.robot_state(agent)","Nav-v0 / GridNav-v0 dùng env.unwrapped.robot_state(); nav_v0 dùng env.robot_state(agent). Đối tượng luôn phản ánh trạng thái mới nhất nên có thể giữ lại."),
+   g("Chung (Nav & Grid)","var(--c-state)",STATE_COMMON),
+   g("Chỉ Nav-v0 / nav_v0","var(--c-state)",STATE_NAV),
+   g("Chỉ GridNav-v0","var(--c-state)",STATE_GRID),
+ ]),
+ g("🎁 Wrappers","var(--c-wrap)",[
+   n("Reward","navsim.wrappers.Reward(env, fn)","Tự viết reward: sau mỗi step gọi fn(state, info) và trả giá trị đó làm reward.",
+     {params:[["env","Môi trường Nav-v0 / GridNav-v0"],["fn","hàm (state, info) -> float"]],
+      example:'def dense(state, info):\n    return info["progress_m"] + 10*state.reached_goal - 0.1*state.collided - 0.01\n\nenv = navsim.wrappers.Reward(gym.make("NavSim/Nav-v0"), dense)',
+      note:"Biến riêng giữa các step: dùng class có __call__ và reset khi state.steps == 1."}),
+   n("ParallelReward","navsim.wrappers.ParallelReward(env, fn)  (cũng là nav_v0.ParallelReward)","Giống Reward nhưng cho nav_v0, tính theo từng robot.",{example:'team = navsim.wrappers.ParallelReward(nav_v0.parallel_env(n_agents=4), dense)'}),
+   n("DiscreteActions","navsim.wrappers.DiscreteActions(env, step_m=0.25, turn_deg=15.0)","Đổi Nav-v0 sang Discrete(5): 0 chờ, 1 tiến, 2 lùi, 3 quay trái, 4 quay phải (Discrete(7) với robot omni: thêm 5/6 đi ngang). Mỗi hành động chạy hết tốc độ qua nhiều step; info[\"macro_steps\"].",
+     {params:[["step_m","Quãng tiến mỗi hành động (m)"],["turn_deg","Góc quay mỗi hành động (độ)"]]}),
+   n("FlattenObservation","gymnasium.wrappers.FlattenObservation(env)","Của Gymnasium: gộp observation Dict thành một vector phẳng."),
+ ]),
+ g("📊 Đánh giá","var(--c-eval)",[
+   n("evaluate","navsim.evaluate(policy, env=\"NavSim/Nav-v0\", *, split=\"test\", episodes=None, per_map=None, seed=0, deterministic=None, progress=False, return_episodes=False, **env_kwargs)",
+     "Chạy policy trên các episode và tính chỉ số.",
+     {params:[["policy","model có predict (SB3), hàm obs->action, \"random\", hoặc dict {agent: policy} cho nav_v0"],["env","id môi trường, env Gymnasium (giữ wrapper) hoặc env nav_v0"],["episodes","None: mọi task của mọi map một lần (per_map giới hạn mỗi map); số: ngần đó episode ngẫu nhiên; nav_v0 mặc định 20"],["deterministic","None = hành động khả dĩ nhất, trừ GridNav-v0 thì lấy mẫu"],["return_episodes","Trả thêm \"episode_infos\" (info cuối mỗi episode)"]],
+      returns:'dict: split, episodes, success, spl, collision_episodes, mean_progress, mean_time, mean_path_m (+ deterministic; nav_v0: robots, robot_episodes, team_success)',
+      example:'navsim.evaluate(model, "NavSim/Nav-v0", dataset="demo-svg")'}),
+ ]),
+ g("🎨 Hình ảnh & GIF","var(--c-vis)",[
+   n("plot_episode","navsim.plot_episode(env, ax=None, lidar=True, path=True, shortest_path=False, title=True, legend=True, figsize=(8,8), save=None, dpi=150)","Vẽ bản đồ, đường đã đi, start, goal, robot, LiDAR bằng matplotlib. shortest_path=True thêm đường ngắn nhất; save=\"x.png\" (hoặc .pdf, .svg) để lưu.",{returns:"matplotlib Axes",example:'navsim.plot_episode(env, shortest_path=True, save="episode.png")'}),
+   n("render_frame","navsim.render_frame(env, style=\"plot\", size=480, lidar=True, shortest_path=False)","Ảnh của bước hiện tại. style=\"plot\" giống plot_episode (~0.1 s/khung); \"fast\" dùng ảnh nội bộ của env (không cần matplotlib, nhanh hơn nhiều).",{returns:"np.ndarray (H,W,3) uint8"}),
+   n("save_gif","navsim.save_gif(frames, path, fps=10)","Ghép danh sách ảnh thành GIF động.",{returns:"Path",example:'frames = [navsim.render_frame(env)]\n...\nnavsim.save_gif(frames, "run.gif", fps=10)'}),
+   n("record_video","navsim.record_video(env, policy=None, path=\"videos/episode.gif\", episodes=1, seed=0, options=None, fps=None, max_steps=1000, every=1, size=480, style=\"plot\", deterministic=None, show=True)","Chạy policy (None = ngẫu nhiên) và lưu GIF (mỗi `every` step một khung); hiện trong notebook. Episode dài nên đặt every=5 hoặc style=\"fast\".",{returns:"Path"}),
+ ]),
+ g("⚡ Chạy song song","var(--c-par)",[
+   n("env_fn","navsim.env_fn(env_id=\"NavSim/Nav-v0\", wrappers=(), **kwargs)","Trả về hàm () -> env có thể pickle, cho thư viện tạo env trong tiến trình con (Stable-Baselines3). Import navsim trong worker trước — cần trên Windows/macOS.",
+     {example:'venv = make_vec_env(navsim.env_fn("NavSim/Nav-v0", dataset="demo-svg",\n        wrappers=[lambda e: navsim.wrappers.Reward(e, dense)]),\n        n_envs=8, vec_env_cls=SubprocVecEnv)',note:"Trong file .py hãy đặt code dưới if __name__ == \"__main__\":."}),
+   n("gym.make_vec","gym.make_vec(\"NavSim/Nav-v0\", num_envs=8, vectorization_mode=\"async\", wrappers=[...], **kwargs)","Môi trường vector của Gymnasium, mỗi bản sao một tiến trình."),
+ ]),
+ g("⌨️ Dòng lệnh (navsim …)","var(--c-cli)",[
+   n("navsim setup","navsim setup [datasets…] [--token T] [--data-dir D] [--force]","Tải dataset (mặc định demo-svg).",{example:"navsim setup isb-svg-v1"}),
+   n("navsim datasets","navsim datasets","Bảng các dataset trên máy: name, env, robots, path."),
+   n("navsim robots","navsim robots","Bảng các mẫu robot: id, drive, radius_m, v_max, w_max, lidar_m, fov_deg, name."),
+   n("navsim info","navsim info <dataset>","In JSON tóm tắt bản đồ và nhiệm vụ theo robot và split.",{example:"navsim info demo-svg"}),
+   n("navsim check","navsim check [--dataset demo-svg] [--robot R] [--agents 3] [--seconds 2.0]","Chạy check_env của Gymnasium, đo tốc độ (steps/s) và với svg chạy parallel_api_test của PettingZoo cho nhiều robot."),
+   n("navsim cache","navsim cache [--clear [DATASET]]","Xem thư mục cache bản đồ; --clear xoá cache (một dataset hoặc tất cả)."),
+   n("python -m navsim","python -m navsim <lệnh>","Cách gọi tương đương lệnh navsim."),
+ ]),
+ g("🔧 Biến môi trường","var(--c-var)",[
+   n("HF_TOKEN","HF_TOKEN","Token Hugging Face (cũng đọc từ secret Colab/Kaggle cùng tên)."),
+   n("NAVSIM_HOME","NAVSIM_HOME","Thư mục dữ liệu (mặc định ~/.navsim; dataset ở <nó>/datasets)."),
+   n("NAVSIM_DATASETS","NAVSIM_DATASETS","Thư mục thêm để tìm dataset (ngăn cách bằng : hoặc ;)."),
+   n("NAVSIM_ROBOTS","NAVSIM_ROBOTS","Thư mục thêm để tìm file JSON robot."),
+   n("NAVSIM_CACHE","NAVSIM_CACHE","Thư mục cache bản đồ, hoặc `off` để tắt."),
+   n("NAVSIM_ACCEL","NAVSIM_ACCEL","Đặt 0 để tắt kernel numba."),
+ ]),
+]);
+
+// ---------- dựng cây ----------
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const treeEl = document.getElementById('tree');
+const leaves = [];
+
+function build(node, parent, path, color, isRoot){
+  const li = document.createElement('li');
+  if (isRoot) li.className = 'root';
+  if (node.children){
+    const col = node.color || color;
+    const b = document.createElement('button');
+    b.className = 'node group'; b.style.setProperty('--col', col);
+    b.innerHTML = (isRoot ? '' : '<span class="caret">▼</span>') + '<span>' + esc(node.name) + '</span>';
+    li.appendChild(b);
+    if (!isRoot) b.onclick = () => li.classList.toggle('closed');
+    else b.onclick = () => openModal(node, path, col, true);
+    const ul = document.createElement('ul');
+    node.children.forEach(c => build(c, ul, path.concat(node.name), col));
+    li.appendChild(ul);
+    if (!isRoot && node.children.length > 8) li.classList.add('closed');
+    node.el = li;
+  } else {
+    li.className = 'leaf';
+    const b = document.createElement('button');
+    b.className = 'node'; b.style.setProperty('--col', color);
+    b.innerHTML = '<code>' + esc(node.name) + '</code>';
+    b.onclick = () => openModal(node, path, color);
+    li.appendChild(b);
+    node.el = li; node.path = path; node.color = color;
+    leaves.push(node);
+  }
+  parent.appendChild(li);
+}
+build(TREE, treeEl, [], '#1d2433', true);
+
+// ---------- cửa sổ chi tiết ----------
+const ov = document.getElementById('ov'), modal = document.getElementById('modal');
+function openModal(n, path, color, isGroup){
+  let h = '<div class="mh" style="--col:' + color + '"><button class="x" onclick="closeModal()">×</button>'
+        + '<div class="path">' + esc(path.join(' › ')) + '</div><h2>' + esc(n.name) + '</h2></div><div class="mb">';
+  if (isGroup){
+    h += '<p>Thư viện NavSim gồm các nhóm lệnh: ' + n.children.map(c => esc(c.name)).join(', ') + '.</p>'
+       + '<h3>Cài đặt nhanh</h3><pre>pip install "navsim-0.1.0-py3-none-any.whl[hub,marl,fast]"</pre>'
+       + '<h3>Ví dụ</h3><pre>import gymnasium as gym, navsim\nenv = gym.make("NavSim/Nav-v0", dataset="demo-svg", robot="turtlebot4", split="train")\nenv = navsim.wrappers.Reward(env, lambda s, i: i["progress_m"] + 10*s.reached_goal)\nobs, info = env.reset(seed=0)\nobs, r, term, trunc, info = env.step(env.action_space.sample())</pre>'
+       + '<p>NavSim chỉ là <b>môi trường</b>: không có reward và không có code huấn luyện (step() trả reward 0.0).</p>';
+  } else {
+    h += '<h3>Cú pháp</h3><pre>' + esc(n.sig) + '</pre><h3>Giải thích</h3><p>' + esc(n.desc) + '</p>';
+    if (n.params) h += '<h3>Tham số</h3><table><tr><th>Tên</th><th>Ý nghĩa</th></tr>'
+        + n.params.map(p => '<tr><td>' + esc(p[0]) + '</td><td>' + esc(p[1]) + '</td></tr>').join('') + '</table>';
+    if (n.returns) h += '<h3>Trả về</h3><p>' + esc(n.returns) + '</p>';
+    if (n.example) h += '<h3>Ví dụ</h3><pre>' + esc(n.example) + '</pre>';
+    if (n.note) h += '<h3>Lưu ý</h3><p>' + esc(n.note) + '</p>';
+  }
+  modal.innerHTML = h + '</div>';
+  ov.classList.add('on');
+}
+function closeModal(){ ov.classList.remove('on'); }
+ov.addEventListener('click', e => { if (e.target === ov) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ---------- điều khiển ----------
+const all = () => treeEl.querySelectorAll('li');
+document.getElementById('exp').onclick = () => all().forEach(l => l.classList.remove('closed'));
+document.getElementById('col').onclick = () => all().forEach(l => { if (l.querySelector(':scope>ul') && !l.classList.contains('root')) l.classList.add('closed'); });
+document.getElementById('q').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  leaves.forEach(l => { l.el.classList.remove('hit'); });
+  if (!q){ return; }
+  all().forEach(l => { if (l.querySelector(':scope>ul') && !l.classList.contains('root')) l.classList.add('closed'); });
+  leaves.forEach(l => {
+    if ((l.name + ' ' + l.sig).toLowerCase().includes(q)){
+      l.el.classList.add('hit');
+      for (let p = l.el.parentElement.closest('li'); p; p = p.parentElement.closest('li')) p.classList.remove('closed');
+    }
+  });
+});
+</script>
+</body>
+</html>
