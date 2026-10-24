@@ -18,6 +18,7 @@ Quy ước: đơn vị là **mét, giây, radian** (grid: **ô**); góc đo ngư
 | Chạy nhiều môi trường song song | [api/parallel.md](api/parallel.md) |
 | Công thức hay dùng (SB3, curriculum, …) | [guide/recipes.md](guide/recipes.md) |
 | Gặp lỗi | [guide/troubleshooting.md](guide/troubleshooting.md) |
+| Hiểu dữ liệu bên trong (dataset, `.npz`, `.svg`), LiDAR, một lần `step()` | [internals/](internals/overview.md): [dataset-format](internals/dataset-format.md), [lidar](internals/lidar.md), [step-and-planning](internals/step-and-planning.md), [robots-and-tasks](internals/robots-and-tasks.md) |
 | Xem toàn bộ lệnh dạng cây | [navsim-api-tree.html](navsim-api-tree.html) (mở bằng trình duyệt) |
 
 ## Cấu trúc thư mục
@@ -29,6 +30,7 @@ docs/
   concepts/       khái niệm dùng chung: episodes (chọn episode, curriculum), robot_state
   api/            tra cứu theo nhóm lệnh: datasets, robots, wrappers, evaluation, visualization,
                   parallel, cli, environment-variables
-  internals/      bên trong: architecture, simulator (cơ chế step/reset/LiDAR), maintainers
+  internals/      bên trong: overview, architecture, dataset-format, lidar, step-and-planning,
+                  robots-and-tasks, simulator (cơ chế từng môi trường), code-layout, maintainers
   navsim-api-tree.html   cây lệnh tương tác
 ```
